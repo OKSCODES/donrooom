@@ -84,3 +84,4 @@ MIT. See `LICENSE`.
 DONROOM 1.0.0 includes production operations tooling under `/admin/monitoring`, `/admin/operations`, `/admin/backups`, and `/admin/feedback`. Public support is available at `/help`, `/feedback`, and `/version`.
 
 Operational settings are stored in `siteSettings/operations`; feature flags are stored in `featureFlags/global`. Both default safely when Firestore is unavailable. Maintenance mode never blocks active administrators.
+"# donrooom" 
