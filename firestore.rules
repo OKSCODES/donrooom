@@ -1,0 +1,114 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function userDoc() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    function active() { return signedIn() && userDoc().status == 'active'; }
+    function admin() { return active() && userDoc().role == 'admin'; }
+    function propertyOwner() { return active() && userDoc().role == 'property'; }
+    function owns(data) { return propertyOwner() && data.ownerId == request.auth.uid; }
+    function guestOwns(data) { return active() && data.guestId == request.auth.uid; }
+    function bookingParticipant(data) { return admin() || owns(data) || guestOwns(data); }
+    function validUserRole(role) { return role in ['admin', 'property', 'guest']; }
+    function validUserStatus(status) { return status in ['active', 'disabled']; }
+    function validBookingStatus(status) { return status in ['pending','confirmed','rejected','cancelled','checked_in','checked_out','completed']; }
+    function validPaymentStatus(status) { return status in ['pending','paid','refunded','failed']; }
+    function validUser(data) { return data.keys().hasAll(['uid','fullName','email','phone','role','status','profileImage','createdAt','updatedAt']) && data.uid is string && data.fullName is string && data.email is string && data.phone is string && validUserRole(data.role) && validUserStatus(data.status) && data.profileImage is string; }
+    function validBooking(data) { return data.keys().hasAll(['id','bookingNumber','guestId','propertyId','roomId','ownerId','checkIn','checkOut','totalNights','grandTotal','status','paymentStatus','createdAt','updatedAt']) && data.id is string && data.bookingNumber is string && data.guestId is string && data.propertyId is string && data.roomId is string && data.ownerId is string && data.checkIn is string && data.checkOut is string && data.checkIn < data.checkOut && data.totalNights is int && data.totalNights > 0 && data.totalNights <= 30 && data.grandTotal is number && data.grandTotal >= 0 && validBookingStatus(data.status) && validPaymentStatus(data.paymentStatus); }
+
+    match /users/{uid} {
+      allow create: if signedIn() && request.auth.uid == uid && request.resource.data.uid == uid && request.resource.data.email == request.auth.token.email && request.resource.data.role == 'guest' && request.resource.data.status == 'active' && validUser(request.resource.data);
+      allow read: if signedIn() && (request.auth.uid == uid || admin());
+      allow update: if admin() && validUser(request.resource.data) || (signedIn() && request.auth.uid == uid && active() && validUser(request.resource.data) && request.resource.data.uid == resource.data.uid && request.resource.data.email == resource.data.email && request.resource.data.role == resource.data.role && request.resource.data.status == resource.data.status && request.resource.data.createdAt == resource.data.createdAt);
+      allow delete: if admin() && request.auth.uid != uid;
+    }
+    match /properties/{propertyId} {
+      allow read: if resource.data.status == 'approved' || admin() || owns(resource.data);
+      allow create: if propertyOwner() && request.resource.data.ownerId == request.auth.uid && request.resource.data.status in ['draft','pending'];
+      allow update: if admin() || (owns(resource.data) && request.resource.data.ownerId == resource.data.ownerId && (request.resource.data.status in ['draft','pending'] || request.resource.data.status == resource.data.status));
+      allow delete: if admin() || owns(resource.data);
+    }
+    match /rooms/{roomId} {
+      allow read: if admin() || owns(resource.data) || get(/databases/$(database)/documents/properties/$(resource.data.propertyId)).data.status == 'approved';
+      allow create: if propertyOwner() && request.resource.data.ownerId == request.auth.uid && exists(/databases/$(database)/documents/properties/$(request.resource.data.propertyId)) && get(/databases/$(database)/documents/properties/$(request.resource.data.propertyId)).data.ownerId == request.auth.uid;
+      allow update: if admin() || (owns(resource.data) && request.resource.data.ownerId == resource.data.ownerId);
+      allow delete: if admin() || owns(resource.data);
+    }
+    match /propertyGallery/{imageId} { allow read: if true; allow create: if propertyOwner() && request.resource.data.ownerId == request.auth.uid; allow update, delete: if admin() || owns(resource.data); }
+    match /roomImages/{imageId} { allow read: if true; allow create: if propertyOwner() && request.resource.data.ownerId == request.auth.uid; allow update, delete: if admin() || owns(resource.data); }
+
+    match /bookings/{bookingId} {
+      allow read: if bookingParticipant(resource.data);
+      allow create: if active() && request.resource.data.guestId == request.auth.uid && request.resource.data.id == bookingId && request.resource.data.status == 'pending' && request.resource.data.paymentStatus == 'pending' && validBooking(request.resource.data);
+      allow update: if admin() || (owns(resource.data) && request.resource.data.guestId == resource.data.guestId && request.resource.data.ownerId == resource.data.ownerId && request.resource.data.propertyId == resource.data.propertyId && request.resource.data.roomId == resource.data.roomId && request.resource.data.grandTotal == resource.data.grandTotal && validBooking(request.resource.data)) || (guestOwns(resource.data) && resource.data.status in ['pending','confirmed'] && request.resource.data.status == 'cancelled' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt']));
+      allow delete: if admin();
+    }
+    match /availability/{entryId} {
+      allow read: if active();
+      allow create: if (propertyOwner() && request.resource.data.ownerId == request.auth.uid) || (active() && request.resource.data.guestId == request.auth.uid && request.resource.data.type == 'booking' && request.resource.data.bookingStatus == 'pending');
+      allow update: if admin() || owns(resource.data);
+      allow delete: if admin() || owns(resource.data) || guestOwns(resource.data);
+    }
+    match /bookingTimeline/{entryId} {
+      allow read: if signedIn() && (admin() || resource.data.guestId == request.auth.uid || resource.data.ownerId == request.auth.uid);
+      allow create: if active() && (request.resource.data.guestId == request.auth.uid || request.resource.data.ownerId == request.auth.uid);
+      allow update, delete: if false;
+    }
+    match /bookingReceipts/{receiptId} {
+      allow read: if signedIn() && (admin() || resource.data.guestId == request.auth.uid || resource.data.ownerId == request.auth.uid);
+      allow create: if active() && request.resource.data.guestId == request.auth.uid;
+      allow update, delete: if admin();
+    }
+    match /notifications/{notificationId} {
+      allow read: if active() && (resource.data.recipientId == request.auth.uid || admin());
+      allow create: if active();
+      allow update: if active() && resource.data.recipientId == request.auth.uid && request.resource.data.recipientId == resource.data.recipientId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+      allow delete: if admin() || (active() && resource.data.recipientId == request.auth.uid);
+    }
+    match /bookingDrafts/{uid} { allow read, write: if active() && request.auth.uid == uid; }
+
+    match /favorites/{favoriteId} {
+      allow create: if active() && request.resource.data.userId == request.auth.uid;
+      allow read, delete: if active() && resource.data.userId == request.auth.uid;
+      allow update: if active() && resource.data.userId == request.auth.uid && request.resource.data.userId == resource.data.userId;
+    }
+    match /recentlyViewed/{viewId} {
+      allow create: if active() && request.resource.data.userId == request.auth.uid;
+      allow read, delete: if active() && resource.data.userId == request.auth.uid;
+      allow update: if active() && resource.data.userId == request.auth.uid && request.resource.data.userId == resource.data.userId;
+    }
+    match /guestSettings/{uid} { allow read, delete: if active() && request.auth.uid == uid; allow create, update: if active() && request.auth.uid == uid && request.resource.data.userId == uid; }
+
+    match /categories/{id} { allow read: if true; allow write: if admin(); }
+    match /locations/{id} { allow read: if true; allow write: if admin(); }
+    match /amenities/{id} { allow read: if true; allow write: if admin(); }
+    match /siteSettings/{id} { allow read: if true; allow write: if admin(); }
+    match /featureFlags/{id} { allow read: if true; allow write: if admin(); }
+    match /feedback/{id} {
+      allow create: if request.resource.data.type in ['bug','feature','general'] && request.resource.data.rating is int && request.resource.data.rating >= 1 && request.resource.data.rating <= 5 && request.resource.data.subject is string && request.resource.data.subject.size() >= 3 && request.resource.data.subject.size() <= 120 && request.resource.data.message is string && request.resource.data.message.size() >= 10 && request.resource.data.message.size() <= 2000;
+      allow read, update, delete: if admin();
+    }
+    match /systemLogs/{id} { allow create: if active() && request.resource.data.userId == request.auth.uid; allow read: if admin(); allow update, delete: if false; }
+    match /errorReports/{id} { allow create: if active() && request.resource.data.userId == request.auth.uid; allow read: if admin(); allow update, delete: if false; }
+    match /reports/{id} { allow read, write: if admin(); }
+    match /auditLogs/{id} { allow read, create: if admin(); allow update, delete: if false; }
+    match /userActivity/{id} { allow create: if active() && request.resource.data.userId == request.auth.uid && request.resource.data.action in ['login','logout','booking_created','booking_cancelled','review_created','profile_updated','room_updated']; allow read: if admin() || (active() && resource.data.userId == request.auth.uid); allow update, delete: if false; }
+
+    match /recentSearches/{searchId} { allow create: if active() && request.resource.data.userId == request.auth.uid; allow read, update, delete: if active() && resource.data.userId == request.auth.uid; }
+    match /searchHistory/{searchId} { allow create: if active() && request.resource.data.userId == request.auth.uid; allow read, update, delete: if active() && resource.data.userId == request.auth.uid; }
+    match /propertyViews/{viewId} { allow create: if true; allow read: if admin(); allow update, delete: if false; }
+    match /shareLogs/{shareId} { allow create: if true; allow read: if admin(); allow update, delete: if false; }
+    match /inquiries/{inquiryId} {
+      allow create: if active() && request.resource.data.guestId == request.auth.uid;
+      allow read: if active() && (admin() || resource.data.guestId == request.auth.uid || resource.data.ownerId == request.auth.uid);
+      allow update: if admin() || (active() && resource.data.ownerId == request.auth.uid && request.resource.data.ownerId == resource.data.ownerId && request.resource.data.guestId == resource.data.guestId) || (active() && resource.data.guestId == request.auth.uid && request.resource.data.guestId == resource.data.guestId && request.resource.data.ownerId == resource.data.ownerId);
+      allow delete: if admin() || (active() && resource.data.guestId == request.auth.uid);
+    }
+    match /offers/{offerId} { allow read: if true; allow create: if propertyOwner() && request.resource.data.ownerId == request.auth.uid; allow update, delete: if admin() || owns(resource.data); }
+    match /announcements/{announcementId} { allow read: if true; allow write: if admin(); }
+    match /recommendations/{recommendationId} { allow read: if true; allow write: if admin(); }
+    match /promoCodes/{promoId} { allow read: if true; allow write: if admin(); }
+    match /reviews/{reviewId} { allow read: if true; allow create: if active() && request.resource.data.guestId == request.auth.uid && exists(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)) && get(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.guestId == request.auth.uid && get(/databases/$(database)/documents/bookings/$(request.resource.data.bookingId)).data.status == 'completed'; allow update: if admin() || owns(resource.data) || (guestOwns(resource.data) && request.resource.data.guestId == resource.data.guestId && request.resource.data.bookingId == resource.data.bookingId && request.resource.data.ownerId == resource.data.ownerId); allow delete: if admin() || guestOwns(resource.data); }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

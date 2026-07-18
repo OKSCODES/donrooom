@@ -1,0 +1,8 @@
+export const PROPERTY_STATUSES = ['draft', 'pending', 'approved', 'rejected']
+export const PROPERTY_TYPES = ['Homestay', 'Guest House', 'Hotel', 'Resort', 'Cottage', 'Hostel']
+export const ROOM_TYPES = ['Single', 'Double', 'Deluxe', 'Suite', 'Family']
+export const ROOM_STATUSES = ['available', 'booked', 'maintenance', 'inactive']
+export const GALLERY_CATEGORIES = ['Exterior', 'Reception', 'Dining', 'Room', 'Bathroom', 'Garden', 'View', 'Parking', 'Nearby Attractions']
+export const AMENITIES = ['WiFi', 'Parking', 'Breakfast', 'Restaurant', 'Room Service', 'TV', 'Air Conditioner', 'Hot Water', 'Bonfire', 'Campfire', 'Mountain View', 'Balcony', 'Garden', 'Laundry', 'Power Backup', 'Kitchen', 'Pet Friendly', 'Family Friendly']
+export const BOOKING_STATUSES = ['pending', 'accepted', 'rejected', 'cancelled', 'checked-in', 'checked-out']
+export const AVAILABILITY_TYPES = ['blocked', 'maintenance']

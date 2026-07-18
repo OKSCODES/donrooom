@@ -1,0 +1,2 @@
+import { motion } from 'framer-motion'
+export function AdminStatCard({label,value,detail}){return <motion.article initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} className="rounded-3xl border border-default bg-white p-5 shadow-sm"><p className="text-sm font-semibold text-muted">{label}</p><p className="mt-2 text-3xl font-black">{value}</p>{detail&&<p className="mt-2 text-xs text-subtle">{detail}</p>}</motion.article>}

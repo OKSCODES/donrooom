@@ -1,0 +1,2 @@
+import { SearchX } from 'lucide-react'
+export function EmptyState({ onReset }) { return <div className="rounded-[2rem] border border-dashed border-black/15 bg-white p-12 text-center"><SearchX className="mx-auto text-donroom-success" size={44}/><h2 className="mt-4 text-2xl font-black">No stays match your search</h2><p className="mt-2 text-muted">Try another destination or clear some filters.</p><button className="mt-6 rounded-full bg-primary-action px-6 py-3 font-bold" onClick={onReset} type="button">Clear filters</button></div> }

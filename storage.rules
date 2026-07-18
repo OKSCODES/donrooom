@@ -1,0 +1,16 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() { return request.auth != null; }
+    function userData() { return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data; }
+    function active() { return signedIn() && userData().status == 'active'; }
+    function propertyOwner() { return active() && userData().role == 'property'; }
+    function admin() { return active() && userData().role == 'admin'; }
+    function validImage() { return request.resource.size <= 5 * 1024 * 1024 && request.resource.contentType.matches('image/(jpeg|png|webp)'); }
+    match /profile-images/{uid}/{fileName} { allow read: if true; allow create, update: if active() && request.auth.uid == uid && validImage(); allow delete: if active() && request.auth.uid == uid; }
+    match /review-images/{uid}/{allPaths=**} { allow read: if true; allow create, update: if active() && request.auth.uid == uid && validImage(); allow delete: if active() && request.auth.uid == uid; }
+    match /property-images/{uid}/{allPaths=**} { allow read: if true; allow create, update: if ((propertyOwner() && request.auth.uid == uid) || admin()) && validImage(); allow delete: if (propertyOwner() && request.auth.uid == uid) || admin(); }
+    match /site-assets/{allPaths=**} { allow read: if true; allow create, update: if admin() && validImage(); allow delete: if admin(); }
+    match /{allPaths=**} { allow read, write: if false; }
+  }
+}

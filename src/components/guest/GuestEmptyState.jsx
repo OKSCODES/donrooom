@@ -1,0 +1,2 @@
+import { Link } from 'react-router-dom'
+export default function GuestEmptyState({title,description,action,to='/properties'}){return <div className="rounded-3xl border border-dashed border-black/15 bg-white p-10 text-center"><h3 className="text-xl font-black">{title}</h3><p className="mx-auto mt-2 max-w-md text-sm text-muted">{description}</p>{action&&<Link to={to} className="mt-5 inline-flex rounded-full bg-dark-surface px-5 py-3 text-sm font-bold text-white">{action}</Link>}</div>}

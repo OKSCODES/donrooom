@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /property/dashboard
+Disallow: /guest/
+Disallow: /checkout
+Disallow: /receipt/
+Sitemap: https://donroom.in/sitemap.xml

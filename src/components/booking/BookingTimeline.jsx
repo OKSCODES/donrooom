@@ -1,0 +1,2 @@
+import { CheckCircle2 } from 'lucide-react'
+export function BookingTimeline({items=[]}){return <ol className="space-y-4">{items.map((item,index)=><li className="flex gap-3" key={item.id||`${item.status}-${index}`}><CheckCircle2 className="mt-0.5 shrink-0 text-donroom-success" size={19}/><div><p className="font-bold capitalize">{item.label||item.status?.replace('_',' ')}</p><p className="text-xs text-subtle">{item.createdAt?.toDate?.().toLocaleString('en-IN')||'Recorded'}</p></div></li>)}</ol>}

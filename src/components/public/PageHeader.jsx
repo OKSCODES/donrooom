@@ -1,0 +1,3 @@
+import { motion } from 'framer-motion'
+import { PageContainer } from '../common/PageContainer'
+export function PageHeader({ eyebrow, title, description }) { return <section className="overflow-hidden bg-cream"><PageContainer className="py-16 sm:py-20"><motion.div initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} className="max-w-3xl"><p className="text-sm font-extrabold uppercase tracking-[.22em] text-donroom-success">{eyebrow}</p><h1 className="mt-3 text-4xl font-black tracking-tight sm:text-6xl">{title}</h1><p className="mt-5 max-w-2xl text-lg leading-8 text-black/65">{description}</p></motion.div></PageContainer></section> }

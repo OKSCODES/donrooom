@@ -1,0 +1,3 @@
+import { AdminPageHeader } from '../../components/admin/AdminPageHeader'
+import { useAuth } from '../../hooks/useAuth'
+export default function AdminProfilePage(){const{profile,user}=useAuth();return <><AdminPageHeader title="Administrator profile" description="Your authenticated platform identity."/><div className="max-w-2xl rounded-3xl bg-white p-6 shadow-sm"><dl className="grid gap-5 sm:grid-cols-2">{[['Full name',profile?.fullName],['Email',profile?.email||user?.email],['Phone',profile?.phone],['Role',profile?.role],['Status',profile?.status],['User ID',user?.uid]].map(([a,b])=><div key={a}><dt className="text-sm font-bold text-subtle">{a}</dt><dd className="mt-1 break-all font-semibold">{b||'—'}</dd></div>)}</dl></div></>}

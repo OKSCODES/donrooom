@@ -1,0 +1,7 @@
+import { useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
+import { useAuth } from '../../hooks/useAuth'
+import { deleteNotification, listNotifications, markAllNotificationsRead, markNotificationRead } from '../../services/guestService'
+import NotificationCard from '../../components/guest/NotificationCard'
+import GuestEmptyState from '../../components/guest/GuestEmptyState'
+export default function GuestNotificationsPage(){const {user}=useAuth();const [items,setItems]=useState([]);const load=async()=>{try{setItems(await listNotifications(user.uid))}catch(e){toast.error(e.message)}};useEffect(()=>{load()},[]);return <div className="space-y-6"><header className="flex flex-wrap items-end justify-between gap-4"><div><h1 className="text-3xl font-black">Notifications</h1><p className="mt-2 text-muted">Booking updates, reminders and announcements.</p></div>{items.some(x=>!x.read)&&<button onClick={async()=>{await markAllNotificationsRead(user.uid);load()}} className="rounded-full bg-primary-action px-5 py-3 text-sm font-black">Mark all read</button>}</header><div className="space-y-3">{items.length?items.map(x=><NotificationCard key={x.id} item={x} onRead={async i=>{await markNotificationRead(user.uid,i.id);load()}} onDelete={async i=>{await deleteNotification(user.uid,i.id);load()}}/>):<GuestEmptyState title="You're all caught up" description="New booking and account updates will appear here."/>}</div></div>}
