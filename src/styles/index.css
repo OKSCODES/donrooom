@@ -21,6 +21,7 @@
 }
 
 :root {
+  color-scheme: light;
   --surface-page: #FFFDF5;
   --surface-cream: #FDF6E3;
   --surface-card: #FFFFFF;
@@ -73,9 +74,20 @@
 @utility focus-accessible { outline: 3px solid var(--focus-ring); outline-offset: 3px; }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-body { margin: 0; min-width: 320px; min-height: 100vh; overflow-x: hidden; background: var(--surface-page); color: var(--text-body); }
-button, input, textarea, select { font: inherit; }
+html { scroll-behavior: smooth; color-scheme: light !important; background: var(--surface-page); }
+body { margin: 0; min-width: 320px; min-height: 100vh; overflow-x: hidden; color-scheme: light !important; background: var(--surface-page); color: var(--text-body); }
+button, input, textarea, select { font: inherit; color-scheme: light !important; }
+input, textarea, select { background-color: var(--surface-card); color: var(--text-body); border-color: var(--border-default); }
+input[type="date"], input[type="datetime-local"], input[type="month"], input[type="time"], input[type="week"] { color-scheme: light !important; }
+select option { background-color: var(--surface-card); color: var(--text-body); }
+input[type="checkbox"], input[type="radio"] { accent-color: var(--focus-ring); }
+input::-webkit-calendar-picker-indicator { opacity: .75; }
+input:-webkit-autofill, textarea:-webkit-autofill, select:-webkit-autofill {
+  -webkit-text-fill-color: var(--text-body) !important;
+  -webkit-box-shadow: 0 0 0 1000px var(--surface-card) inset !important;
+  caret-color: var(--text-body);
+  transition: background-color 9999s ease-out 0s;
+}
 a { color: inherit; text-decoration: none; }
 img { max-width: 100%; }
 ::selection { background: var(--accent-primary); color: var(--text-heading); }
@@ -111,14 +123,3 @@ button:disabled { cursor: not-allowed; opacity: .62; }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior:auto !important; animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; } }
 @media (max-width: 420px) { .admin-primary, .admin-secondary, button, [role="button"] { min-height:44px; } table { font-size:.8125rem; } }
-
-html[data-theme="dark"] {
-  --surface-page:#171712; --surface-cream:#20201B; --surface-card:#24241F; --surface-dark:#0F0F0D;
-  --text-heading:#FFFDF5; --text-body:#F5F3E8; --text-muted:#D1CFC5; --text-subtle:#B8B5AA;
-  --border-default:#49483F; color:var(--text-body); background:var(--surface-page);
-}
-html[data-theme="dark"] body { background:var(--surface-page); color:var(--text-body); }
-html[data-theme="dark"] .bg-white { background-color:var(--surface-card) !important; }
-html[data-theme="dark"] .text-black, html[data-theme="dark"] .text-donroom-text { color:var(--text-body) !important; }
-html[data-theme="dark"] .text-black\/60, html[data-theme="dark"] .text-black\/55, html[data-theme="dark"] .text-black\/50, html[data-theme="dark"] .text-black\/45, html[data-theme="dark"] .text-black\/40, html[data-theme="dark"] .text-black\/35 { color:var(--text-muted) !important; }
-html[data-theme="dark"] .border-black\/10, html[data-theme="dark"] .border-black\/5 { border-color:var(--border-default) !important; }
